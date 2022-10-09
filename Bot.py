@@ -1,91 +1,67 @@
 import re
 from pprint import pprint
 
-dict_users = {}
+users_dict = {}
+
 
 def input_error(handler):
+    
     def wrapper(*args, **kwargs):
+        
         try:
             return handler(*args, **kwargs)
+        except KeyError:
+            return 'Wrong name'
+        except ValueError as exception:
+            return exception.args[0]
+        except IndexError:
+            return 'Pls print: name and number'
+        except TypeError:
+            return 'Wrong command'
         
-        except ValueError as e:
-            return e.args[0]
-            
     return wrapper
 
 
 @input_error
-def new_user():
-    user = input("Enter new user name and phone number (example: Tetiana +380959998877): " )
-    
-    list_user = user.split (" ")
+def new_user(param):
 
-    if len(list_user)!=2:
-        raise ValueError(print("Data is not correct, try again"))
-            
-    elif list_user[0] in dict_users:
-        raise ValueError(print("User exists"))
-    
-    else:
-        check_name = re.search(r"[A-Z][a-z]*", list_user[0])
-        check_number = re.search(r"\+380(95|50|67|53|93)[0-9]{7}", list_user[1])
-        
-        if check_name != None and check_number != None:
-            check_name1 = check_name.group()
-            check_number1 = check_number.group()
-        else:
-            raise ValueError(print("Data isn't correct, try again"))
-                
-        if len(check_name1) != len(list_user[0]) or len(check_number1) != len(list_user[1]):
-            raise ValueError(print("Data isn't correct"))
-            
-        dict_users[check_name1] = check_number1
+    name, phone = change_input_user_data(param)
 
+    if name in users_dict:
+        raise ValueError('This contact already exist')
+    
+    users_dict[name] = phone
+    
+    return f'You added new contact: {name} with this {phone}'
+    
    
 @input_error
-def change_data():
-    user = input("Enter user name and new phone number (example: Tetiana +380959998877): " )
-    list_user = user.split (" ")
+def change_data(param):
 
-    if len(list_user) > 2:
-        raise ValueError(print("Data isn't correct, try again"))
+    name, phone = change_input_user_data(param)
 
-    if list_user[0] in dict_users:
-        check_number = re.search(r"\+380(95|50|67|53|93)[0-9]{7}", list_user[1])
-        
-        if check_number != None:
-            check_number1 = check_number.group()
-        else:
-            raise ValueError(print("Data isn't correct, try again"))
+    if name in users_dict:
+        users_dict[name] = phone
+        return f'You changed number to {phone} for {name}'
+    return 'Use add command plz.'
 
-        if len(check_number1) == len(list_user[1]):
-            dict_users[list_user[0]] = list_user[1]
-        else:
-            raise ValueError (print("Data isn't correct, try again"))
-    
-    else:
-        raise ValueError (print("User's name isn't in the list"))
-    
 
 @input_error   
-def user_phone():
+def user_phone(param):
+
+    if param.strip() not in users_dict:
+        raise ValueError('This contact does not exist')
+    return users_dict.get(param.strip())
     
-    name= input("Enter user's name: ")
-
-    if name in dict_users:
-        print(dict_users[name])
-    else:
-        raise ValueError (print("User isn't in the list"))
-
 
 @input_error    
 def user_list():
 
-    pprint(dict_users)    
+    return (pprint(users_dict))    
 
 @input_error
 def answer_hello():
-    return print('How can I help you?')
+    return 'How can I help you?'
 
 @input_error
 def answer_exit():
@@ -104,18 +80,53 @@ commands={
     "exit" : answer_exit
 }
 
-   
-def main():
 
-    while True:
+def action(user_input):
     
         command = input("Input command: ")
     
-        if command in commands:
-            commands[command]()
-        else:
-            print("Unknown command")
+    return reaction_func(input_command)()
 
+
+def reaction_func(reaction):
+    return commands.get(reaction, break_func)
+
+def break_func():
+    return 'Wrong enter'
+
+
+def change_input_user_data(input_user_data):
+
+    user = input_user_data.strip().split(" ")
+
+    if len(user)!=2:
+
+        raise IndexError
+
+    name = re.search(r"[A-Z][a-z]*", user[0])
+    phone = re.search(r"\+380(95|50|67|53|93)[0-9]{7}", user[1])
+        
+    if name != None and phone != None:
+        name1 = name.group()
+        phone1 = phone.group()
+    else:
+        raise ValueError("Data isn't correct, try again")
+                
+    if len(name1) != len(user[0]) or len(phone1) != len(user[1]):
+        raise ValueError("Data isn't correct")
+            
+    return name1, phone1
+  
+def main():
+
+    print ("Bot takes data in the format as in the example: Tetiana +380959998877")
+
+    while True:
+
+        user_input = input("Input command for bot: ")
+        result = action(user_input)
+        print(result)
+           
 
 if __name__ == "__main__":
     main()
